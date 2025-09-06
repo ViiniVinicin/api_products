@@ -39,16 +39,15 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Erro: Produto não encontrado pelo ID: " + id));
         return toResponseDTO(product);
     }
-    
-    public List<ProductResponseDTO> getProductsByCategory(String category) {
 
-        List<Product> allProducts = productRepository.findAll();
+    public List<ProductResponseDTO> getByProductsCategory(String category) {
+        // A CHAMADA AO REPOSITÓRIO ESTÁ CORRETA?
+        List<Product> products = productRepository.findByProductCategory(category);
 
-
-        if (allProducts.isEmpty()) {
+        if(products.isEmpty()) {
             throw new ResourceNotFoundException("Erro: Nenhum produto encontrado na categoria: " + category);
         } else {
-            return allProducts.stream()
+            return products.stream()
                     .map(this::toResponseDTO)
                     .toList();
         }

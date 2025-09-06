@@ -2,10 +2,8 @@ package br.com.gerenciamento.api_products.controller;
 
 import br.com.gerenciamento.api_products.dto.ProductCreateDTO;
 import br.com.gerenciamento.api_products.dto.ProductResponseDTO;
-import br.com.gerenciamento.api_products.model.Product;
 import br.com.gerenciamento.api_products.service.ProductService;
 import jakarta.validation.Valid;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -34,9 +32,9 @@ public class ProductController{
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
-    @GetMapping("/category") // URL será /products/category?name=Eletrônicos
-    public ResponseEntity<List<ProductResponseDTO>> getProductsByCategory(@RequestParam("name") String categoryName) {
-        List<ProductResponseDTO> productsDTO = productService.getProductsByCategory(categoryName);
+    @GetMapping("/category") // URL será /products/category?name=Perfumes
+    public ResponseEntity<List<ProductResponseDTO>> getByProductsCategory(@RequestParam("name") String category) {
+        List<ProductResponseDTO> productsDTO = productService.getByProductsCategory(category);
         return ResponseEntity.ok(productsDTO);
     }
 
