@@ -75,7 +75,6 @@ public class ProductService {
         );
     }
 
-    // Métodos de mapeamento unificados pelo mesmo nome (sobrecarga)
     private void mapDtoToEntity(Product product, ProductCreateDTO dto) {
         product.setProductName(dto.productName());
         product.setProductDescription(dto.productDescription());
