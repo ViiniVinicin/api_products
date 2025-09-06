@@ -2,7 +2,7 @@ package br.com.gerenciamento.api_products.service;
 
 import br.com.gerenciamento.api_products.dto.ProductCreateDTO;
 import br.com.gerenciamento.api_products.dto.ProductResponseDTO;
-import br.com.gerenciamento.api_products.dto.ProductUpdateDTO;
+import br.com.gerenciamento.api_products.exception.ProductAlreadyExistsException;
 import br.com.gerenciamento.api_products.exception.ResourceNotFoundException;
 import br.com.gerenciamento.api_products.model.Product;
 import br.com.gerenciamento.api_products.repository.ProductRepository;
@@ -39,8 +39,28 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Erro: Produto não encontrado pelo ID: " + id));
         return toResponseDTO(product);
     }
+    
+    public List<ProductResponseDTO> getProductsByCategory(String category) {
+
+        List<Product> allProducts = productRepository.findAll();
+
+
+        if (allProducts.isEmpty()) {
+            throw new ResourceNotFoundException("Erro: Nenhum produto encontrado na categoria: " + category);
+        } else {
+            return allProducts.stream()
+                    .map(this::toResponseDTO)
+                    .toList();
+        }
+    }
 
     public ProductResponseDTO createProduct(ProductCreateDTO createDTO) {
+
+        productRepository.findByProductNameIgnoreCase(createDTO.productName())
+                .ifPresent(product -> {
+                    throw new ProductAlreadyExistsException("Um produto com o nome '" + createDTO.productName() + "' já existe.");
+                });
+
         Product newProduct = new Product();
         mapDtoToEntity(newProduct, createDTO);
 
@@ -76,14 +96,6 @@ public class ProductService {
     }
 
     private void mapDtoToEntity(Product product, ProductCreateDTO dto) {
-        product.setProductName(dto.productName());
-        product.setProductDescription(dto.productDescription());
-        product.setProductCategory(dto.productCategory());
-        product.setProductPrice(dto.productPrice());
-        product.setProductStockQuantity(dto.productStockQuantity());
-    }
-
-    private void mapDtoToEntity(Product product, ProductUpdateDTO dto) {
         product.setProductName(dto.productName());
         product.setProductDescription(dto.productDescription());
         product.setProductCategory(dto.productCategory());

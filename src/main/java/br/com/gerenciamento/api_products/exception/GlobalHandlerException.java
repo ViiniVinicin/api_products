@@ -8,9 +8,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -24,15 +26,13 @@ public class GlobalHandlerException extends RuntimeException {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> handleGenericException(Exception ex, HttpServletRequest request) {
 
-        // 3. Use o logger para registrar o erro de forma estruturada
-        // O primeiro argumento é a mensagem, o segundo é a exceção (que será impressa no log)
         log.error("Ocorreu um erro inesperado: {}", ex.getMessage(), ex);
 
         ErrorResponseDTO errorResponse = new ErrorResponseDTO(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
-                "Ocorreu um erro interno inesperado no servidor.", // Mensagem segura para o cliente
+                "Ocorreu um erro interno inesperado no servidor.",
                 request.getRequestURI()
         );
 
@@ -71,5 +71,66 @@ public class GlobalHandlerException extends RuntimeException {
         body.put("path", request.getRequestURI());
 
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ProductAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponseDTO> handleProductAlreadyExists(
+            ProductAlreadyExistsException ex, HttpServletRequest request) {
+
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(), // 409
+                "Conflict",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponseDTO> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+
+        String supportedMethods = "";
+        if (ex.getSupportedMethods() != null) {
+            supportedMethods = String.join(", ", ex.getSupportedMethods());
+        }
+
+        String errorMessage = "O método '" + ex.getMethod() + "' não é suportado para esta URL. Métodos suportados: "
+                + supportedMethods;
+
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(
+                LocalDateTime.now(),
+                HttpStatus.METHOD_NOT_ALLOWED.value(), // 405
+                "Method Not Allowed",
+                errorMessage,
+                request.getRequestURI()
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.METHOD_NOT_ALLOWED);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponseDTO> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+
+        String requiredType = "Desconhecido";
+        if (ex.getRequiredType() != null) {
+            requiredType = ex.getRequiredType().getSimpleName();
+        }
+
+        String error = "O parâmetro '" + ex.getName() + "' recebeu o valor '" + ex.getValue()
+                + "', que é de um tipo inválido. O tipo esperado é: " + requiredType;
+
+        ErrorResponseDTO errorResponse = new ErrorResponseDTO(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(), // 400
+                "Bad Request",
+                error,
+                request.getRequestURI()
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 }
